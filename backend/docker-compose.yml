@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: clausecraft_db
+    environment:
+      POSTGRES_USER: clausecraft
+      POSTGRES_PASSWORD: clausecraft_dev_password
+      POSTGRES_DB: clausecraft
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: clausecraft_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@clausecraft.ai
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
