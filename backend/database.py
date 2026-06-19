@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = "postgresql+asyncpg://clausecraft:clausecraft_dev_password@localhost:5432/clausecraft"
+DATABASE_URL = "postgresql+asyncpg://clausecraft:clausecraft_dev_password@localhost:5433/clausecraft"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = sessionmaker(

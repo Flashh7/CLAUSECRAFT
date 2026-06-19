@@ -15,12 +15,8 @@ export default function LandingPage() {
           ClauseCraft
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <Link href="#features" className="hover:text-primary transition-colors">Features</Link>
-          <Link href="#frameworks" className="hover:text-primary transition-colors">Supported Contracts</Link>
-          <Link href="#testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
         </nav>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden sm:flex text-muted-foreground hover:text-foreground">Sign In</Button>
           <Link href="/counsel">
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
               Start Analysis <ArrowRight className="w-4 h-4 ml-2" />
@@ -55,30 +51,7 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 w-full max-w-5xl text-left">
-          <div className="p-6 rounded-2xl border border-white/5 bg-card/30 backdrop-blur-md hover:bg-card/50 transition-colors">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-              <FileSearch className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Instant Clause Retrieval</h3>
-            <p className="text-muted-foreground leading-relaxed">Automatically find relevant clauses from CPWD GCC, Railways GCC, and your custom uploaded contracts with high accuracy.</p>
-          </div>
-          <div className="p-6 rounded-2xl border border-white/5 bg-card/30 backdrop-blur-md hover:bg-card/50 transition-colors">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-              <ShieldCheck className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Risk Assessment Engine</h3>
-            <p className="text-muted-foreground leading-relaxed">Get objective probability scores for Contractor vs. Employer positions and identify potential hallucination risks.</p>
-          </div>
-          <div className="p-6 rounded-2xl border border-white/5 bg-card/30 backdrop-blur-md hover:bg-card/50 transition-colors">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-              <Scale className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">Drafting & Strategy</h3>
-            <p className="text-muted-foreground leading-relaxed">Generate dynamic case assessments, Claim Notices, and Arbitration Submissions grounded in contract specifics.</p>
-          </div>
-        </div>
+        {/* End of Hero Section */}
       </main>
     </div>
   );

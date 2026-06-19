@@ -1,4 +1,5 @@
 "use client";
+// Force rebuild to fix Turbopack client manifest bug
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ type TimelineEvent = {
 
 type Document = {
   name: string;
+  metadata_json?: Record<string, string | null>;
 };
 
 type Matter = {
@@ -88,7 +90,8 @@ export default function CounselPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/matters");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const res = await fetch(`${apiUrl}/api/matters`, { credentials: "include" });
         const data = await res.json();
         setHistoryList(data);
       } catch (err) {
@@ -127,7 +130,8 @@ export default function CounselPage() {
 
   const loadMatter = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/matters/${id}`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/api/matters/${id}`, { credentials: "include" });
       const data = await res.json();
       setActiveMatter({
         id: data.id,
@@ -166,18 +170,21 @@ export default function CounselPage() {
     // e.g., /api/upload?matter_id=m-1234
     
     try {
-      const response = await fetch(`http://localhost:8000/api/upload?matter_id=${activeMatter.id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/upload?matter_id=${activeMatter.id}`, {
         method: "POST",
         body: formData,
+        credentials: "include"
       });
 
       if (response.ok) {
+        const data = await response.json();
         // Update the Matter state to reflect the uploaded document
         setActiveMatter(prev => ({
           ...prev,
           metadata: {
             ...prev.metadata,
-            documents: [...prev.metadata.documents, { name: file.name }]
+            documents: [...prev.metadata.documents, { name: file.name, metadata_json: data.metadata }]
           }
         }));
       } else {
@@ -198,27 +205,25 @@ export default function CounselPage() {
     if (!input.trim() || isStreaming) return;
     
     const userMessage: Message = { id: Date.now().toString(), role: "user", content: input };
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = { id: assistantMessageId, role: "assistant", content: "" };
+    
     const newMessages = [...activeMatter.messages, userMessage];
     
     setActiveMatter(prev => ({
       ...prev,
-      messages: newMessages
+      messages: [...prev.messages, userMessage, assistantMessage]
     }));
     setInput("");
     setIsStreaming(true);
     setStreamingStatus("Initializing...");
 
-    // Create a temporary assistant message ID for streaming
-    const assistantMessageId = (Date.now() + 1).toString();
-    setActiveMatter(prev => ({
-      ...prev,
-      messages: [...prev.messages, { id: assistantMessageId, role: "assistant", content: "" }]
-    }));
-
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           matter_id: activeMatter.id,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
@@ -415,7 +420,7 @@ export default function CounselPage() {
                   ) : msg.role === 'user' ? (
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   ) : (
-                    <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
+                    <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400 prose-p:leading-relaxed prose-p:mb-6 prose-li:mb-2">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                   )}
@@ -477,6 +482,8 @@ export default function CounselPage() {
             </div>
             <div className="text-[10px] text-center text-muted-foreground mt-2">
               ClauseCraft Counsel uses AI. Check important legal references against original source documents.
+              <br/>
+              <strong>Privacy Notice:</strong> ClauseCraft does not permanently store user histories. Matters are automatically deleted after the session retention period expires.
             </div>
           </div>
         </div>
@@ -579,14 +586,29 @@ function IntelligenceSidebar({ matter }: { matter: Matter }) {
           {/* Evidence Section */}
           <div className="space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Evidence Locker</h3>
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               {metadata.documents.length === 0 ? (
                  <div className="text-xs text-muted-foreground italic">No documents attached.</div>
               ) : (
                 metadata.documents.map((doc, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/20 cursor-pointer animate-in fade-in">
-                    <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-xs text-foreground truncate">{doc.name}</span>
+                  <div key={idx} className="flex flex-col gap-2 p-2 rounded-md bg-background/50 border border-border/50 animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-xs font-semibold text-foreground truncate">{doc.name}</span>
+                    </div>
+                    {doc.metadata_json && Object.keys(doc.metadata_json).length > 0 && !doc.metadata_json.error && (
+                      <div className="text-[10px] space-y-1 mt-1 text-muted-foreground pl-5 border-l border-primary/20 ml-1.5">
+                        {Object.entries(doc.metadata_json).map(([key, val]) => {
+                          if (!val || val === "null") return null;
+                          return (
+                            <div key={key} className="grid grid-cols-3 gap-1">
+                              <span className="font-medium text-foreground">{key}:</span>
+                              <span className="col-span-2 line-clamp-2" title={String(val)}>{String(val)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ))
               )}

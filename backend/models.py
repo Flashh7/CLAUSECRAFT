@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime, timedelta
 
 class Matter(Base):
     __tablename__ = "matters"
@@ -15,6 +16,8 @@ class Matter(Base):
     confidence = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
+    session_id = Column(String, index=True, nullable=True)
 
     messages = relationship("Message", back_populates="matter", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="matter", cascade="all, delete-orphan")
@@ -38,6 +41,7 @@ class Document(Base):
     matter_id = Column(UUID(as_uuid=True), ForeignKey("matters.id"), nullable=False)
     filename = Column(String, nullable=False)
     file_type = Column(String, nullable=True)
+    metadata_json = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     matter = relationship("Matter", back_populates="documents")
