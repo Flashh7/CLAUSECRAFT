@@ -26,6 +26,19 @@ from slowapi.errors import RateLimitExceeded
 # Load environment variables
 load_dotenv()
 
+# Graceful startup validation
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    import sys
+    print("ERROR: DATABASE_URL environment variable is missing. Cannot start application.", file=sys.stderr)
+    sys.exit(1)
+
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+if not NVIDIA_API_KEY:
+    import sys
+    print("ERROR: NVIDIA_API_KEY environment variable is missing. Cannot start application.", file=sys.stderr)
+    sys.exit(1)
+
 # Initialize Rate Limiter
 limiter = Limiter(key_func=get_remote_address)
 
@@ -33,15 +46,15 @@ app = FastAPI(title="ClauseCraft Counsel API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+origins_str = os.getenv(
+    "CORS_ORIGINS", 
+    "http://localhost:3000,http://127.0.0.1:3000,http://10.97.201.50:3000,https://clausecraft.ai,https://www.clausecraft.ai"
+)
+allowed_origins = [o.strip() for o in origins_str.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://10.97.201.50:3000",
-        "https://clausecraft.ai",
-        "https://www.clausecraft.ai"
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
